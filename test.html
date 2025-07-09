@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+        .error { background: #fff3cd; color: #856404; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        button:hover { background: #0056b3; }
+        #log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Socket.IO Connection Test</h1>
+    
+    <div id="status" class="status disconnected">Disconnected</div>
+    
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="clearLog()">Clear Log</button>
+    <button onclick="window.location.href='/'">Go to Main App</button>
+    
+    <div id="log"></div>
+
+    <script>
+        // Fallback mechanism for Socket.IO
+        function loadSocketIO() {
+            return new Promise((resolve, reject) => {
+                // Try CDN first
+                const script = document.createElement('script');
+                script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+                script.onload = () => resolve();
+                script.onerror = () => {
+                    // Fallback to local server
+                    const fallbackScript = document.createElement('script');
+                    fallbackScript.src = '/socket.io/socket.io.js';
+                    fallbackScript.onload = () => resolve();
+                    fallbackScript.onerror = () => reject(new Error('Failed to load Socket.IO'));
+                    document.head.appendChild(fallbackScript);
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        let socket;
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+
+        function addLog(message) {
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML += `[${time}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function clearLog() {
+            log.innerHTML = '';
+        }
+
+        function testConnection() {
+            addLog('Attempting to connect...');
+            
+            try {
+                if (typeof io === 'undefined') {
+                    addLog('❌ Socket.IO not loaded. Trying to load...');
+                    loadSocketIO().then(() => {
+                        addLog('✅ Socket.IO loaded successfully. Testing connection...');
+                        testConnection();
+                    }).catch(error => {
+                        addLog(`❌ Failed to load Socket.IO: ${error.message}`);
+                        status.textContent = 'Failed to Load';
+                        status.className = 'status error';
+                    });
+                    return;
+                }
+                
+                socket = io();
+                
+                socket.on('connect', () => {
+                    addLog('✅ Connected to server!');
+                    status.textContent = 'Connected';
+                    status.className = 'status connected';
+                });
+                
+                socket.on('disconnect', () => {
+                    addLog('❌ Disconnected from server');
+                    status.textContent = 'Disconnected';
+                    status.className = 'status disconnected';
+                });
+                
+                socket.on('connect_error', (error) => {
+                    addLog(`❌ Connection error: ${error.message}`);
+                    status.textContent = 'Connection Error';
+                    status.className = 'status error';
+                });
+                
+                addLog('Socket.IO connection attempt initiated');
+                
+            } catch (error) {
+                addLog(`❌ Failed to create Socket.IO connection: ${error.message}`);
+                status.textContent = 'Failed to Connect';
+                status.className = 'status error';
+            }
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            addLog('Page loaded. Click "Test Connection" to test Socket.IO.');
+        });
+    </script>
+</body>
+</html> 

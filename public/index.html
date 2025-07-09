@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatRandom - Talk to Strangers</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Homepage -->
+    <div id="homepage" class="page active">
+        <div class="container">
+            <header class="header">
+                <h1 class="logo">
+                    <i class="fas fa-comments"></i>
+                    ChatRandom
+                </h1>
+                <p class="tagline">Talk to strangers instantly - text or video chat</p>
+                <div class="user-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-users"></i>
+                        <span id="active-users">0</span> online
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-keyboard"></i>
+                        <span id="waiting-text">0</span> waiting for text
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-video"></i>
+                        <span id="waiting-video">0</span> waiting for video
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div class="features">
+                    <div class="feature">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Anonymous</h3>
+                        <p>No registration required</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-globe"></i>
+                        <h3>Global</h3>
+                        <p>Connect with people worldwide</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-bolt"></i>
+                        <h3>Instant</h3>
+                        <p>Start chatting immediately</p>
+                    </div>
+                </div>
+
+                <div class="chat-options">
+                    <h2>Choose your chat type:</h2>
+                    <div class="option-buttons">
+                        <button class="btn btn-primary" onclick="startChat('text')">
+                            <i class="fas fa-keyboard"></i>
+                            Text Chat
+                        </button>
+                        <button class="btn btn-secondary" onclick="startChat('video')">
+                            <i class="fas fa-video"></i>
+                            Video Chat
+                        </button>
+                    </div>
+                </div>
+
+                <div class="safety-info">
+                    <h3><i class="fas fa-info-circle"></i> Safety Guidelines</h3>
+                    <ul>
+                        <li>Be respectful and kind to others</li>
+                        <li>Don't share personal information</li>
+                        <li>Report inappropriate behavior</li>
+                        <li>You can disconnect anytime</li>
+                    </ul>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Text Chat Page -->
+    <div id="text-chat" class="page">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2><i class="fas fa-keyboard"></i> Text Chat</h2>
+                <div class="status" id="text-status">Looking for someone...</div>
+                <div class="chat-controls">
+                    <div class="user-count-mini">
+                        <i class="fas fa-users"></i>
+                        <span id="active-users-chat">0</span> online
+                    </div>
+                    <button class="btn btn-danger" onclick="disconnectChat()">
+                        <i class="fas fa-times"></i> Disconnect
+                    </button>
+                    <button class="btn btn-warning" onclick="reportUser()">
+                        <i class="fas fa-flag"></i> Report
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="text-messages">
+                <div class="message system">
+                    <div class="message-content">
+                        <i class="fas fa-info-circle"></i>
+                        Welcome to text chat! You'll be connected with a stranger shortly.
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <input type="text" id="text-input" placeholder="Type your message..." disabled>
+                <button class="btn btn-primary" id="send-btn" onclick="sendMessage()" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Chat Page -->
+    <div id="video-chat" class="page">
+        <div class="video-container">
+            <div class="video-header">
+                <h2><i class="fas fa-video"></i> Video Chat</h2>
+                <div class="status" id="video-status">Looking for someone...</div>
+                <div class="video-controls">
+                    <div class="user-count-mini">
+                        <i class="fas fa-users"></i>
+                        <span id="active-users-video">0</span> online
+                    </div>
+                    <button class="btn btn-danger" onclick="disconnectChat()">
+                        <i class="fas fa-times"></i> Disconnect
+                    </button>
+                    <button class="btn btn-warning" onclick="reportUser()">
+                        <i class="fas fa-flag"></i> Report
+                    </button>
+                </div>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-wrapper">
+                    <video id="local-video" autoplay muted playsinline></video>
+                    <div class="video-label">You</div>
+                </div>
+                <div class="video-wrapper">
+                    <video id="remote-video" autoplay playsinline></video>
+                    <div class="video-label">Stranger</div>
+                    <div class="video-placeholder" id="video-placeholder">
+                        <i class="fas fa-user"></i>
+                        <p>Waiting for stranger...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-permissions" id="video-permissions">
+                <div class="permission-content">
+                    <i class="fas fa-camera"></i>
+                    <h3>Camera & Microphone Access</h3>
+                    <p>Please allow camera and microphone access to start video chat.</p>
+                    <button class="btn btn-primary" onclick="requestPermissions()">
+                        Allow Access
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="report-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-flag"></i> Report User</h3>
+                <button class="close-btn" onclick="closeReportModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Please select a reason for reporting:</p>
+                <select id="report-reason">
+                    <option value="inappropriate">Inappropriate behavior</option>
+                    <option value="harassment">Harassment</option>
+                    <option value="spam">Spam</option>
+                    <option value="other">Other</option>
+                </select>
+                <textarea id="report-description" placeholder="Additional details (optional)"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="submitReport()">Submit Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables and functions that need to be available immediately
+        let socket = null;
+        let currentChatType = null;
+        let partnerId = null;
+        let localStream = null;
+        let peerConnection = null;
+        let isConnected = false;
+        
+        // Global functions that buttons need to access
+        window.startChat = function(chatType) {
+            if (!socket) {
+                console.log('Socket not ready, retrying...');
+                setTimeout(() => window.startChat(chatType), 1000);
+                return;
+            }
+            
+            currentChatType = chatType;
+            
+            if (chatType === 'text') {
+                showPage('textChat');
+                document.getElementById('text-status').textContent = 'Looking for someone...';
+                socket.emit('join-queue', 'text');
+            } else {
+                showPage('videoChat');
+                document.getElementById('video-status').textContent = 'Looking for someone...';
+                window.requestPermissions();
+            }
+        };
+        
+        window.disconnectChat = function() {
+            if (isConnected && socket) {
+                socket.emit('disconnect-chat');
+            }
+            window.cleanup();
+            showPage('homepage');
+        };
+        
+        window.reportUser = function() {
+            if (!isConnected) return;
+            document.getElementById('report-modal').classList.add('active');
+            document.getElementById('report-reason').focus();
+        };
+        
+        window.closeReportModal = function() {
+            document.getElementById('report-modal').classList.remove('active');
+            document.getElementById('report-reason').value = 'inappropriate';
+            document.getElementById('report-description').value = '';
+        };
+        
+        window.submitReport = function() {
+            const reason = document.getElementById('report-reason').value;
+            const description = document.getElementById('report-description').value;
+            
+            if (socket) {
+                socket.emit('report-user', { reason, description });
+            }
+            
+            window.closeReportModal();
+            window.disconnectChat();
+        };
+        
+        window.sendMessage = function() {
+            const textInput = document.getElementById('text-input');
+            const message = textInput.value.trim();
+            if (!message || !isConnected || !socket) return;
+            
+            // Add message to chat
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message sent';
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = message;
+            messageDiv.appendChild(contentDiv);
+            document.getElementById('text-messages').appendChild(messageDiv);
+            
+            socket.emit('send-message', { message });
+            textInput.value = '';
+        };
+        
+        window.requestPermissions = function() {
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                .then(stream => {
+                    localStream = stream;
+                    document.getElementById('local-video').srcObject = stream;
+                    document.getElementById('video-permissions').style.display = 'none';
+                    if (socket) {
+                        socket.emit('join-queue', 'video');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error accessing media devices:', error);
+                    document.querySelector('#video-permissions p').textContent = 
+                        'Unable to access camera and microphone. Please check your permissions and try again.';
+                });
+        };
+        
+        // Utility functions
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageName === 'textChat' ? 'text-chat' : pageName === 'videoChat' ? 'video-chat' : 'homepage').classList.add('active');
+        }
+        
+        window.cleanup = function() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            document.getElementById('local-video').srcObject = null;
+            document.getElementById('remote-video').srcObject = null;
+            document.getElementById('video-placeholder').style.display = 'block';
+            document.getElementById('video-permissions').style.display = 'flex';
+            document.getElementById('text-messages').innerHTML = '';
+            document.getElementById('text-input').value = '';
+            document.getElementById('text-input').disabled = true;
+            document.getElementById('send-btn').disabled = true;
+            document.getElementById('text-status').textContent = 'Looking for someone...';
+            document.getElementById('video-status').textContent = 'Looking for someone...';
+            isConnected = false;
+            partnerId = null;
+            currentChatType = null;
+        };
+        
+        // Additional functions needed for socket events
+        function startTextChat() {
+            document.getElementById('text-status').textContent = 'Connected!';
+            document.getElementById('text-input').disabled = false;
+            document.getElementById('send-btn').disabled = false;
+            document.getElementById('text-input').focus();
+            
+            addSystemMessage('You are now connected with a stranger!');
+        }
+        
+        function startVideoChat() {
+            document.getElementById('video-status').textContent = 'Connected!';
+            document.getElementById('video-placeholder').style.display = 'none';
+            initializeWebRTC();
+        }
+        
+        function addMessage(message, type, timestamp = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = message;
+            
+            messageDiv.appendChild(contentDiv);
+            
+            if (timestamp) {
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                messageDiv.appendChild(timeDiv);
+            }
+            
+            document.getElementById('text-messages').appendChild(messageDiv);
+            document.getElementById('text-messages').scrollTop = document.getElementById('text-messages').scrollHeight;
+        }
+        
+        function addSystemMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message system';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+            
+            messageDiv.appendChild(contentDiv);
+            document.getElementById('text-messages').appendChild(messageDiv);
+            document.getElementById('text-messages').scrollTop = document.getElementById('text-messages').scrollHeight;
+        }
+        
+        function handlePartnerDisconnect() {
+            if (currentChatType === 'text') {
+                addSystemMessage('Stranger has disconnected.');
+                document.getElementById('text-status').textContent = 'Disconnected';
+                document.getElementById('text-input').disabled = true;
+                document.getElementById('send-btn').disabled = true;
+            } else {
+                document.getElementById('video-status').textContent = 'Disconnected';
+                document.getElementById('video-placeholder').style.display = 'block';
+                document.getElementById('video-placeholder').innerHTML = '<i class="fas fa-user"></i><p>Stranger has disconnected</p>';
+            }
+            
+            isConnected = false;
+            partnerId = null;
+            
+            setTimeout(() => {
+                if (!isConnected) {
+                    window.cleanup();
+                    showPage('homepage');
+                }
+            }, 3000);
+        }
+        
+        function initializeWebRTC() {
+            const configuration = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            };
+            
+            peerConnection = new RTCPeerConnection(configuration);
+            
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+            
+            peerConnection.ontrack = (event) => {
+                document.getElementById('remote-video').srcObject = event.streams[0];
+            };
+            
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate && socket) {
+                    socket.emit('ice-candidate', { candidate: event.candidate });
+                }
+            };
+            
+            createOffer();
+        }
+        
+        async function createOffer() {
+            try {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                if (socket) {
+                    socket.emit('offer', { offer });
+                }
+            } catch (error) {
+                console.error('Error creating offer:', error);
+            }
+        }
+        
+        async function handleOffer(offer) {
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                if (socket) {
+                    socket.emit('answer', { answer });
+                }
+            } catch (error) {
+                console.error('Error handling offer:', error);
+            }
+        }
+        
+        async function handleAnswer(answer) {
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+            } catch (error) {
+                console.error('Error handling answer:', error);
+            }
+        }
+        
+        async function handleIceCandidate(candidate) {
+            try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (error) {
+                console.error('Error handling ICE candidate:', error);
+            }
+        }
+        
+        // Fallback mechanism for Socket.IO
+        function loadSocketIO() {
+            return new Promise((resolve, reject) => {
+                // Try CDN first
+                const script = document.createElement('script');
+                script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+                script.onload = () => resolve();
+                script.onerror = () => {
+                    // Fallback to local server
+                    const fallbackScript = document.createElement('script');
+                    fallbackScript.src = '/socket.io/socket.io.js';
+                    fallbackScript.onload = () => resolve();
+                    fallbackScript.onerror = () => reject(new Error('Failed to load Socket.IO'));
+                    document.head.appendChild(fallbackScript);
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Load Socket.IO and initialize connection
+        loadSocketIO().then(() => {
+            // Initialize socket immediately after Socket.IO loads
+            if (typeof io !== 'undefined') {
+                window.socket = io();
+                socket = window.socket;
+                
+                socket.on('connect', () => {
+                    console.log('Connected to server');
+                });
+                
+                socket.on('connect_error', (error) => {
+                    console.error('Connection error:', error);
+                });
+                
+                socket.on('chat-started', (data) => {
+                    console.log('Chat started:', data);
+                    partnerId = data.partnerId;
+                    currentChatType = data.chatType;
+                    isConnected = true;
+                    
+                    if (data.chatType === 'text') {
+                        startTextChat();
+                    } else {
+                        startVideoChat();
+                    }
+                });
+                
+                socket.on('receive-message', (data) => {
+                    addMessage(data.message, 'received', data.timestamp);
+                });
+                
+                socket.on('partner-disconnected', () => {
+                    handlePartnerDisconnect();
+                });
+                
+                // WebRTC signaling events
+                socket.on('offer', (data) => {
+                    handleOffer(data.offer);
+                });
+                
+                socket.on('answer', (data) => {
+                    handleAnswer(data.answer);
+                });
+                
+                socket.on('ice-candidate', (data) => {
+                    handleIceCandidate(data.candidate);
+                });
+                
+                // Handle user count updates
+                socket.on('user-count-update', (data) => {
+                    document.getElementById('active-users').textContent = data.activeUsers;
+                    document.getElementById('waiting-text').textContent = data.waitingText;
+                    document.getElementById('waiting-video').textContent = data.waitingVideo;
+                    
+                    // Update chat page user counts
+                    const chatUserCount = document.getElementById('active-users-chat');
+                    const videoUserCount = document.getElementById('active-users-video');
+                    if (chatUserCount) chatUserCount.textContent = data.activeUsers;
+                    if (videoUserCount) videoUserCount.textContent = data.activeUsers;
+                });
+            }
+            
+            // Load our main script
+            const script = document.createElement('script');
+            script.src = 'script.js';
+            document.body.appendChild(script);
+        }).catch(error => {
+            console.error('Failed to load Socket.IO:', error);
+            alert('Failed to load required libraries. Please check your internet connection and refresh the page.');
+        });
+    </script>
+</body>
+</html> 
