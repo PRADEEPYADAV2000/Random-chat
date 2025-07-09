@@ -198,6 +198,7 @@
         let partnerId = null;
         let localStream = null;
         let peerConnection = null;
+        window.isInitiator = false; // Initialize WebRTC initiator flag
         let isConnected = false;
         
         // Global functions that buttons need to access
@@ -277,6 +278,12 @@
                     localStream = stream;
                     document.getElementById('local-video').srcObject = stream;
                     document.getElementById('video-permissions').style.display = 'none';
+                    
+                    // If we're already connected, initialize WebRTC now
+                    if (isConnected && currentChatType === 'video') {
+                        initializeWebRTC();
+                    }
+                    
                     if (socket) {
                         socket.emit('join-queue', 'video');
                     }
@@ -318,55 +325,11 @@
             currentChatType = null;
         };
         
-        // Additional functions needed for socket events
-        function startTextChat() {
-            document.getElementById('text-status').textContent = 'Connected!';
-            document.getElementById('text-input').disabled = false;
-            document.getElementById('send-btn').disabled = false;
-            document.getElementById('text-input').focus();
-            
-            addSystemMessage('You are now connected with a stranger!');
-        }
+        // Chat functions are now handled in script.js
         
-        function startVideoChat() {
-            document.getElementById('video-status').textContent = 'Connected!';
-            document.getElementById('video-placeholder').style.display = 'none';
-            initializeWebRTC();
-        }
+        // Video chat functions are now handled in script.js
         
-        function addMessage(message, type, timestamp = null) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.textContent = message;
-            
-            messageDiv.appendChild(contentDiv);
-            
-            if (timestamp) {
-                const timeDiv = document.createElement('div');
-                timeDiv.className = 'message-time';
-                timeDiv.textContent = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                messageDiv.appendChild(timeDiv);
-            }
-            
-            document.getElementById('text-messages').appendChild(messageDiv);
-            document.getElementById('text-messages').scrollTop = document.getElementById('text-messages').scrollHeight;
-        }
-        
-        function addSystemMessage(message) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message system';
-            
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
-            
-            messageDiv.appendChild(contentDiv);
-            document.getElementById('text-messages').appendChild(messageDiv);
-            document.getElementById('text-messages').scrollTop = document.getElementById('text-messages').scrollHeight;
-        }
+        // Message functions are now handled in script.js
         
         function handlePartnerDisconnect() {
             if (currentChatType === 'text') {
@@ -391,73 +354,7 @@
             }, 3000);
         }
         
-        function initializeWebRTC() {
-            const configuration = {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            };
-            
-            peerConnection = new RTCPeerConnection(configuration);
-            
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
-            
-            peerConnection.ontrack = (event) => {
-                document.getElementById('remote-video').srcObject = event.streams[0];
-            };
-            
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate && socket) {
-                    socket.emit('ice-candidate', { candidate: event.candidate });
-                }
-            };
-            
-            createOffer();
-        }
-        
-        async function createOffer() {
-            try {
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                if (socket) {
-                    socket.emit('offer', { offer });
-                }
-            } catch (error) {
-                console.error('Error creating offer:', error);
-            }
-        }
-        
-        async function handleOffer(offer) {
-            try {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                if (socket) {
-                    socket.emit('answer', { answer });
-                }
-            } catch (error) {
-                console.error('Error handling offer:', error);
-            }
-        }
-        
-        async function handleAnswer(answer) {
-            try {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-            } catch (error) {
-                console.error('Error handling answer:', error);
-            }
-        }
-        
-        async function handleIceCandidate(candidate) {
-            try {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-            } catch (error) {
-                console.error('Error handling ICE candidate:', error);
-            }
-        }
+        // WebRTC functions are now handled in script.js
         
         // Fallback mechanism for Socket.IO
         function loadSocketIO() {
@@ -499,6 +396,10 @@
                     currentChatType = data.chatType;
                     isConnected = true;
                     
+                    // Set the isInitiator flag - this is crucial for WebRTC
+                    window.isInitiator = data.isInitiator;
+                    console.log('Set window.isInitiator to:', data.isInitiator);
+                    
                     if (data.chatType === 'text') {
                         startTextChat();
                     } else {
@@ -516,15 +417,33 @@
                 
                 // WebRTC signaling events
                 socket.on('offer', (data) => {
-                    handleOffer(data.offer);
+                    console.log('Received offer from:', data.from);
+                    console.log('Offer SDP:', data.offer.sdp.substring(0, 100) + '...');
+                    if (window.handleOffer) {
+                        window.handleOffer(data.offer);
+                    } else {
+                        console.error('handleOffer function not available');
+                    }
                 });
                 
                 socket.on('answer', (data) => {
-                    handleAnswer(data.answer);
+                    console.log('Received answer from:', data.from);
+                    console.log('Answer SDP:', data.answer.sdp.substring(0, 100) + '...');
+                    if (window.handleAnswer) {
+                        window.handleAnswer(data.answer);
+                    } else {
+                        console.error('handleAnswer function not available');
+                    }
                 });
                 
                 socket.on('ice-candidate', (data) => {
-                    handleIceCandidate(data.candidate);
+                    console.log('Received ICE candidate from:', data.from);
+                    console.log('ICE candidate:', data.candidate.candidate.substring(0, 50) + '...');
+                    if (window.handleIceCandidate) {
+                        window.handleIceCandidate(data.candidate);
+                    } else {
+                        console.error('handleIceCandidate function not available');
+                    }
                 });
                 
                 // Handle user count updates
@@ -550,5 +469,9 @@
             alert('Failed to load required libraries. Please check your internet connection and refresh the page.');
         });
     </script>
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Developed by Namaste-Tech Developer PY &copy; 2025</p>
+    </footer>
 </body>
-</html> 
+</html>
